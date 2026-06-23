@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="header"></div>
+  <div class="form-container">
   <main class="card">
     <h1>Login</h1>
     <form id="loginForm">
@@ -15,12 +16,20 @@
       <input id="email" type="email">
       <label for="password">Password</label>
       <input id="password" type="password">
+      <br></br>
       <input type="submit" value="Login">
     </form>
+          <br></br>
+    <p>Don't have an account? <a href="register.html">Register here</a>.</p>
   </main>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="../js/user.js"></script>
   <script>
-    fetch('header.html').then(r=>r.text()).then(t=>{document.getElementById('header').innerHTML=t});
+    fetch('header-guest.html').then(r=>r.text()).then(t=>{document.getElementById('header').innerHTML=t});
+      fetch('footer.html').then(r => r.text()).then(t => { document.getElementById('footer').innerHTML = t; });
+
   </script>
 </body>
 </html>

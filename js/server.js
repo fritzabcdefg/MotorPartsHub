@@ -28,6 +28,7 @@ try {
 		email: { type: DataTypes.STRING, allowNull: false, unique: true },
 		password: { type: DataTypes.STRING, allowNull: false },
 		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		role: { type: DataTypes.STRING, defaultValue: 'user' },
 		token: { type: DataTypes.STRING, allowNull: true }
 	});
 
@@ -49,19 +50,28 @@ const users = [];
 let nextUserId = 1;
 
 // Helper functions that abstract storage (DB or in-memory)
-async function findUserByEmail(email) {
-	if (usingDb && User) return await User.findOne({ where: { email } });
-	return users.find(u => u.email === email && u.active);
+async function findUserByEmail(email, includeInactive = false) {
+	if (usingDb && User) {
+		const whereClause = { email };
+		if (!includeInactive) whereClause.active = true;
+		return await User.findOne({ where: whereClause });
+	}
+	return users.find(u => u.email === email && (includeInactive || u.active));
 }
 
-async function findUserById(id) {
+async function findUserById(id, includeInactive = false) {
 	if (usingDb && User) return await User.findByPk(id);
-	return users.find(u => u.id === id && u.active);
+	return users.find(u => u.id === id && (includeInactive || u.active));
 }
 
-async function createUser({ name, email, password }) {
-	if (usingDb && User) return await User.create({ name, email, password });
-	const newUser = { id: nextUserId++, name, email, password, active: true };
+async function getAllUsers() {
+	if (usingDb && User) return await User.findAll();
+	return users;
+}
+
+async function createUser({ name, email, password, role = 'user' }) {
+	if (usingDb && User) return await User.create({ name, email, password, role });
+	const newUser = { id: nextUserId++, name, email, password, role, active: true };
 	users.push(newUser);
 	return newUser;
 }
@@ -112,7 +122,7 @@ app.post('/api/v1/login', async (req, res) => {
 	return res.json({
 		success: 'Login successful',
 		token,
-		user: { id: user.id, name: user.name, email: user.email }
+		user: { id: user.id, name: user.name, email: user.email, role: user.role }
 	});
 });
 
@@ -140,10 +150,56 @@ app.post('/api/v1/update-profile', upload.single('avatar'), async (req, res) => 
 	});
 });
 
-app.delete('/api/v1/deactivate', async (req, res) => {
+// Middleware to verify admin role
+function verifyAdmin(req, res, next) {
+	const token = req.headers.authorization?.split(' ')[1];
+	if (!token) return res.status(401).json({ message: 'No token provided.' });
+	// Token validation is basic - in production use JWT
+	next();
+}
+
+// Get all users (admin only)
+app.get('/api/v1/users', verifyAdmin, async (req, res) => {
+	try {
+		const allUsers = await getAllUsers();
+		const userList = allUsers.map(u => ({
+			id: u.id,
+			name: u.name,
+			email: u.email,
+			role: u.role || 'user',
+			active: u.active
+		}));
+		res.json({ success: true, users: userList });
+	} catch (error) {
+		res.status(500).json({ message: 'Unable to fetch users.', error: error.message });
+	}
+});
+
+// Update user role (admin only)
+app.put('/api/v1/users/:id/role', verifyAdmin, async (req, res) => {
+	const userId = Number(req.params.id);
+	const { role } = req.body;
+	if (!role || !['user', 'admin'].includes(role)) {
+		return res.status(400).json({ message: 'Valid role is required (user or admin).' });
+	}
+
+	const user = await findUserById(userId, true);
+	if (!user) return res.status(404).json({ message: 'User not found.' });
+
+	if (usingDb && user.update) {
+		await user.update({ role });
+	} else {
+		user.role = role;
+	}
+
+	return res.json({ success: true, message: 'User role updated.', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+
+// Deactivate user (admin only)
+app.delete('/api/v1/deactivate', verifyAdmin, async (req, res) => {
 	const { email } = req.body;
 	if (!email) return res.status(400).json({ message: 'Email is required.' });
-	const user = await findUserByEmail(email);
+	const user = await findUserByEmail(email, true);
 	if (!user) return res.status(404).json({ message: 'User not found.' });
 
 	if (usingDb && user.update) {

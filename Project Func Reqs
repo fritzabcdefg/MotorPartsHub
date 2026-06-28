@@ -20,7 +20,7 @@ quiz 4 15pts
 Jquery validation for mp3 and mp4
 
 quiz 5 15pts
-jquery/api search/autocomplete on homepage. 
+✅ jquery/api search/autocomplete on homepage. 
 
 quiz 6 15pts
 ✅ route protection. add a middleware to check a user's role. only admin roles can access crud api.   

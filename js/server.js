@@ -182,11 +182,27 @@ app.delete('/api/v1/deactivate', verifyAdmin, async (req, res) => {
 
 app.get('/parts', async (req, res) => {
 	try {
-		const parts = await Part.findAll();
+		const query = req.query.q;
+		const where = {};
+		if (query) {
+			where.name = { [require('sequelize').Op.like]: `%${query}%` };
+		}
+		const parts = await Part.findAll({ where });
 		res.json(parts);
 	} catch (error) {
 		console.error('GET /parts error:', error.stack || error.message);
 		res.status(500).json({ message: 'Unable to fetch parts.', error: error.message });
+	}
+});
+
+app.get('/parts/:id', async (req, res) => {
+	try {
+		const part = await Part.findByPk(req.params.id);
+		if (!part) return res.status(404).json({ message: 'Part not found.' });
+		res.json(part);
+	} catch (error) {
+		console.error('GET /parts/:id error:', error.stack || error.message);
+		res.status(500).json({ message: 'Unable to fetch part.', error: error.message });
 	}
 });
 

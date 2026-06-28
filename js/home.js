@@ -1,8 +1,84 @@
 $(document).ready(function () {
+    const API_URL = 'http://localhost:4000/parts';
+    const $searchInput = $('#partSearch');
+    const $results = $('#searchResults');
+    let debounceTimer = null;
     const url = 'http://localhost:4000/'
     var itemCount = 0;
     var priceTotal = 0;
     var quantity = 0;
+
+    function clearResults() {
+        $results.empty();
+    }
+
+    function renderResults(parts) {
+        if (!parts || !parts.length) {
+            $results.html('<div class="search-empty">No parts found.</div>');
+            return;
+        }
+
+        const html = parts.map(part => `
+            <div class="search-item" data-id="${part.id}" data-name="${part.name}">
+                <span>${part.name}</span>
+                <strong>$${Number(part.price).toFixed(2)}</strong>
+            </div>
+        `).join('');
+
+        $results.html(html);
+    }
+
+    function searchParts(query, callback) {
+        const trimmed = query.trim();
+        if (!trimmed) {
+            clearResults();
+            return;
+        }
+
+        $.ajax({
+            url: API_URL,
+            type: 'GET',
+            data: { q: trimmed },
+            success: function (parts) {
+                renderResults(parts);
+                if (typeof callback === 'function') {
+                    callback(parts);
+                }
+            },
+            error: function () {
+                $results.html('<div class="search-empty">Search failed. Try again.</div>');
+            }
+        });
+    }
+
+    $searchInput.on('input', function () {
+        const query = $(this).val();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => searchParts(query), 250);
+    });
+
+    function navigateToPart(partId) {
+        if (!partId) return;
+        window.location.href = `item.html?partId=${partId}`;
+    }
+
+    $searchInput.on('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const query = $(this).val();
+            clearTimeout(debounceTimer);
+            searchParts(query, function (parts) {
+                if (parts && parts.length > 0) {
+                    navigateToPart(parts[0].id);
+                }
+            });
+        }
+    });
+
+    $results.on('click', '.search-item', function () {
+        const partId = $(this).data('id');
+        navigateToPart(partId);
+    });
 
     const getCart = () => {
         let cart = localStorage.getItem('cart');

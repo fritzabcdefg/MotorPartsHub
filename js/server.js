@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const upload = multer();
-const fs = require('fs');
 const path = require('path');
 
 const sequelize = require('../models/database');
@@ -17,68 +16,43 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Try to use Sequelize + SQLite if available, otherwise fall back to in-memory store
-let DataTypes, User;
-let usingDb = false;
-try {
-	DataTypes = require('sequelize').DataTypes;
+// Configure Sequelize-backed User model and ensure DB is ready before starting server
+const { DataTypes } = require('sequelize');
 
-	User = sequelize.define('User', {
-		name: { type: DataTypes.STRING, allowNull: false },
-		email: { type: DataTypes.STRING, allowNull: false, unique: true },
-		password: { type: DataTypes.STRING, allowNull: false },
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
-		role: { type: DataTypes.STRING, defaultValue: 'user' },
-		token: { type: DataTypes.STRING, allowNull: true }
-	});
+const User = sequelize.define('User', {
+	name: { type: DataTypes.STRING, allowNull: false },
+	email: { type: DataTypes.STRING, allowNull: false, unique: true },
+	password: { type: DataTypes.STRING, allowNull: false },
+	active: { type: DataTypes.BOOLEAN, defaultValue: true },
+	role: { type: DataTypes.STRING, defaultValue: 'user' },
+	token: { type: DataTypes.STRING, allowNull: true }
+});
 
-	(async () => {
-		try {
-			await sequelize.sync();
-			usingDb = true;
-			console.log('Using SQLite database at', path.join(__dirname, '..', 'database.sqlite'));
-		} catch (e) {
-			console.warn('Sequelize sync failed, falling back to in-memory store:', e.message);
-		}
-	})();
-} catch (err) {
-	console.log('Sequelize not available; using in-memory store. Install sequelize and sqlite3 for persistence.');
-}
-
-// In-memory fallback
-const users = [];
-let nextUserId = 1;
-
-// Helper functions that abstract storage (DB or in-memory)
+// Helper functions that operate against the Sequelize `User` model
 async function findUserByEmail(email, includeInactive = false) {
-	if (usingDb && User) {
-		const whereClause = { email };
-		if (!includeInactive) whereClause.active = true;
-		return await User.findOne({ where: whereClause });
-	}
-	return users.find(u => u.email === email && (includeInactive || u.active));
+	const whereClause = { email };
+	if (!includeInactive) whereClause.active = true;
+	return await User.findOne({ where: whereClause });
 }
 
 async function findUserById(id, includeInactive = false) {
-	if (usingDb && User) return await User.findByPk(id);
-	return users.find(u => u.id === id && (includeInactive || u.active));
+	const user = await User.findByPk(id);
+	if (!user) return null;
+	if (!includeInactive && !user.active) return null;
+	return user;
 }
 
 async function getAllUsers() {
-	if (usingDb && User) return await User.findAll();
-	return users;
+	return await User.findAll();
 }
 
 async function createUser({ name, email, password, role = 'user' }) {
-	if (usingDb && User) return await User.create({ name, email, password, role });
-	const newUser = { id: nextUserId++, name, email, password, role, active: true };
-	users.push(newUser);
-	return newUser;
+	return await User.create({ name, email, password, role });
 }
 
 // Test route
 app.get('/', (req, res) => {
-	res.send('Server is running!');
+	res.sendFile(path.join(__dirname, '..', 'public', 'home.html'));
 });
 
 app.post('/api/v1/register', async (req, res) => {
@@ -112,12 +86,8 @@ app.post('/api/v1/login', async (req, res) => {
 		return res.status(401).json({ message: 'Invalid email or password.' });
 	}
 
-	const token = `token-${usingDb ? user.id : user.id}-${Date.now()}`;
-	if (usingDb && user.update) {
-		await user.update({ token });
-	} else {
-		user.token = token;
-	}
+	const token = `token-${user.id}-${Date.now()}`;
+	await user.update({ token });
 
 	return res.json({
 		success: 'Login successful',
@@ -137,11 +107,7 @@ app.post('/api/v1/update-profile', upload.single('avatar'), async (req, res) => 
 	if (req.body.email) updates.email = req.body.email;
 	if (req.body.password) updates.password = req.body.password;
 
-	if (usingDb && user.update) {
-		await user.update(updates);
-	} else {
-		Object.assign(user, updates);
-	}
+	await user.update(updates);
 
 	return res.json({
 		success: true,
@@ -186,11 +152,7 @@ app.put('/api/v1/users/:id/role', verifyAdmin, async (req, res) => {
 	const user = await findUserById(userId, true);
 	if (!user) return res.status(404).json({ message: 'User not found.' });
 
-	if (usingDb && user.update) {
-		await user.update({ role });
-	} else {
-		user.role = role;
-	}
+	await user.update({ role });
 
 	return res.json({ success: true, message: 'User role updated.', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
@@ -202,11 +164,7 @@ app.delete('/api/v1/deactivate', verifyAdmin, async (req, res) => {
 	const user = await findUserByEmail(email, true);
 	if (!user) return res.status(404).json({ message: 'User not found.' });
 
-	if (usingDb && user.update) {
-		await user.update({ active: false });
-	} else {
-		user.active = false;
-	}
+	await user.update({ active: false });
 
 	return res.json({ success: true, message: 'User account deactivated.' });
 });
@@ -216,6 +174,7 @@ app.get('/parts', async (req, res) => {
 		const parts = await Part.findAll();
 		res.json(parts);
 	} catch (error) {
+		console.error('GET /parts error:', error.stack || error.message);
 		res.status(500).json({ message: 'Unable to fetch parts.', error: error.message });
 	}
 });
@@ -225,11 +184,22 @@ app.post('/parts', async (req, res) => {
 		const part = await Part.create(req.body);
 		res.status(201).json(part);
 	} catch (error) {
+		console.error('POST /parts error:', error.stack || error.message);
 		res.status(400).json({ message: 'Unable to create part.', error: error.message });
 	}
 });
 
-// Start server
-app.listen(PORT, () => {
-	console.log(`Server started at http://localhost:${PORT}`);
-});
+// Ensure DB is connected and synced, then start the server
+(async () => {
+	try {
+		await sequelize.authenticate();
+		await sequelize.sync();
+		console.log(`Sequelize connected: dialect=${sequelize.getDialect()} host=${sequelize.options.host}:${sequelize.options.port} db=${sequelize.config.database}`);
+		app.listen(PORT, () => {
+			console.log(`Server started at http://localhost:${PORT}`);
+		});
+	} catch (e) {
+		console.error('Failed to initialize database connection:', e.message);
+		process.exit(1);
+	}
+})();

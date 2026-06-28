@@ -33,6 +33,12 @@ body{
 .site-title{font-weight:700;color:var(--accent);letter-spacing:0.6px}
 .nav-links a{color:var(--muted);text-decoration:none;margin-left:12px}
 .nav-links a:hover{color:var(--accent-2)}
+.nav-dropdown{position:relative;display:inline-block;margin-left:12px}
+.nav-dropdown > a{display:inline-block}
+.nav-dropdown .dropdown-menu{display:none;position:absolute;top:100%;left:0;min-width:200px;background:rgba(15,7,32,0.98);border:1px solid rgba(155,92,255,0.18);border-radius:10px;padding:8px 0;box-shadow:0 20px 60px rgba(0,0,0,0.25);z-index:20}
+.nav-dropdown:hover .dropdown-menu{display:block}
+.nav-dropdown .dropdown-menu a{display:block;padding:10px 16px;color:var(--muted);margin:0;white-space:nowrap}
+.nav-dropdown .dropdown-menu a:hover{color:var(--accent-2);background:rgba(155,92,255,0.08)}
 
 /* Cards */
 .card{

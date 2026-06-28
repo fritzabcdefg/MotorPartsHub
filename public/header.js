@@ -21,8 +21,12 @@ function initHeaderNav() {
 
   const isAdmin = user.role === 'admin';
   if (!isAdmin) {
-    if (navDashboard && navDashboard.parentNode) {
-      navDashboard.parentNode.removeChild(navDashboard);
+    if (navCart && navCart.parentNode) {
+      navCart.parentNode.removeChild(navCart);
+    }
+    const navDropdown = document.getElementById('adminNavDropdown');
+    if (navDropdown) {
+      navDropdown.style.display = 'none';
     }
   }
 
@@ -36,11 +40,9 @@ function initHeaderNav() {
     if (navCart && navCart.parentNode) {
       navCart.parentNode.removeChild(navCart);
     }
-    if (navDashboard && !document.querySelector('.admin-links')) {
-      const adminLinks = document.createElement('span');
-      adminLinks.className = 'admin-links';
-      adminLinks.innerHTML = '\n      <a href="dashboard.html#users">Users</a>\n      <a href="dashboard.html#inventory">Inventory</a>\n      <a href="dashboard.html#orders">Orders</a>';
-      navDashboard.parentNode.insertBefore(adminLinks, navDashboard.nextSibling);
+    const navDropdown = document.getElementById('adminNavDropdown');
+    if (navDropdown) {
+      navDropdown.style.display = 'inline-block';
     }
   }
 

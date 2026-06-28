@@ -206,13 +206,39 @@ app.get('/parts/:id', async (req, res) => {
 	}
 });
 
-app.post('/parts', async (req, res) => {
+app.post('/parts', verifyAdmin, async (req, res) => {
 	try {
 		const part = await Part.create(req.body);
 		res.status(201).json(part);
 	} catch (error) {
 		console.error('POST /parts error:', error.stack || error.message);
 		res.status(400).json({ message: 'Unable to create part.', error: error.message });
+	}
+});
+
+app.put('/parts/:id', verifyAdmin, async (req, res) => {
+	try {
+		const part = await Part.findByPk(req.params.id);
+		if (!part) return res.status(404).json({ message: 'Part not found.' });
+
+		await part.update(req.body);
+		res.json({ success: true, message: 'Part updated.', part });
+	} catch (error) {
+		console.error('PUT /parts/:id error:', error.stack || error.message);
+		res.status(400).json({ message: 'Unable to update part.', error: error.message });
+	}
+});
+
+app.delete('/parts/:id', verifyAdmin, async (req, res) => {
+	try {
+		const part = await Part.findByPk(req.params.id);
+		if (!part) return res.status(404).json({ message: 'Part not found.' });
+
+		await part.destroy();
+		res.json({ success: true, message: 'Part deleted.' });
+	} catch (error) {
+		console.error('DELETE /parts/:id error:', error.stack || error.message);
+		res.status(500).json({ message: 'Unable to delete part.', error: error.message });
 	}
 });
 

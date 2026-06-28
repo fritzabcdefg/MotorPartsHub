@@ -1,10 +1,69 @@
 <nav class="site-header">
   <div class="site-title">MotorPartsHub</div>
-  <div class="nav-links">
+  <div class="nav-links" id="mainNav">
+    <!-- Navigation populated by script based on user role -->
     <a href="home.html">Home</a>
     <a href="item.html">Items</a>
-    <a href="cart.html">Cart <span id="itemCount">0</span></a>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="login.html">Login</a>
+    <a href="cart.html" id="navCart">Cart <span id="itemCount">0</span></a>
+    <a href="dashboard.html" id="navDashboard">Dashboard</a>
+    <a href="login.html" id="navAuth">Login</a>
   </div>
 </nav>
+<script>
+  (function () {
+    try {
+      const stored = localStorage.getItem('user');
+      const nav = document.getElementById('mainNav');
+      const navCart = document.getElementById('navCart');
+      const navAuth = document.getElementById('navAuth');
+
+      if (!stored) {
+        // not logged in - ensure Login is visible
+        if (navAuth) navAuth.href = 'login.html';
+        return;
+      }
+
+      const user = JSON.parse(stored);
+      // If admin: remove Cart and show admin management links
+      if (user.role === 'admin') {
+        if (navCart && navCart.parentNode) navCart.parentNode.removeChild(navCart);
+
+        // Insert admin links after Dashboard
+        const dashboard = document.getElementById('navDashboard');
+        const adminLinks = document.createElement('span');
+        adminLinks.innerHTML = '\n      <a href="users.html">Users</a>\n      <a href="items.html">Items</a>\n      <a href="orders.html">Orders</a>\n      <a href="#" id="navLogout">Logout</a>';
+        if (dashboard && dashboard.parentNode) dashboard.parentNode.insertBefore(adminLinks, dashboard.nextSibling);
+
+        // replace Login with Logout
+        if (navAuth) {
+          navAuth.textContent = 'Logout';
+          navAuth.href = '#';
+          navAuth.id = 'navLogout';
+        }
+
+        // attach logout handler
+        document.addEventListener('click', function (e) {
+          if (e.target && (e.target.id === 'navLogout' || e.target.closest('#navLogout'))) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+          }
+        });
+      } else {
+        // regular user: show Logout instead of Login if logged in
+        if (navAuth) {
+          navAuth.textContent = 'Logout';
+          navAuth.href = '#';
+          navAuth.addEventListener('click', function (e) {
+            e.preventDefault();
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Header script error', err);
+    }
+  })();
+</script>

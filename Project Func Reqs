@@ -1,15 +1,15 @@
 Advance Web Application Project Requirements
 
 M   achine problems 20pts
-mp1 NodeJS CRUD api 20pts
+✅ mp1 NodeJS CRUD api 20pts
 mp2 NodeJS CRUD api 20pts
 
 mp3 CRUD Jquery/datatables multiple file uploads for mp1 20pts
 mp4 CRUD Jquery/datatables frontend for mp2
 mp5 generate and send tokens for authentication. 15pts
-    save token on users table. 5pts
-check - mp6 User registration, Login API via Jquery AJAX. admin can update role of user. admin can deactivate users. List users on datatable. NodeJS 20pts
-chechk - mp7  use Sequelize ORM on CRUD functions 20pts
+    ✅ save token on users table. 5pts
+✅ mp6 User registration, Login API via Jquery AJAX. admin can update role of user. admin can deactivate users. List users on datatable. NodeJS 20pts
+✅ mp7  use Sequelize ORM on CRUD functions 20pts
 
 term test Lab 40pts
 transactions CRUD api and jquery front end. the sample UI implementation will have lower points. laravel 20pts NodeJS 25pts
@@ -23,7 +23,7 @@ quiz 5 15pts
 jquery/api search/autocomplete on homepage. 
 
 quiz 6 15pts
-route protection. add a middleware to check a user's role. only admin roles can access crud api.   
+✅ route protection. add a middleware to check a user's role. only admin roles can access crud api.   
 
 quiz 7 15pts
 three(3) js charts. bar line and pie charts 

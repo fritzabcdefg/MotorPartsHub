@@ -50,6 +50,12 @@ async function createUser({ name, email, password, role = 'user' }) {
 	return await User.create({ name, email, password, role });
 }
 
+async function findUserByToken(token, includeInactive = false) {
+	const whereClause = { token };
+	if (!includeInactive) whereClause.active = true;
+	return await User.findOne({ where: whereClause });
+}
+
 // Test route
 app.get('/', (req, res) => {
 	res.sendFile(path.join(__dirname, '..', 'public', 'home.html'));
@@ -117,10 +123,15 @@ app.post('/api/v1/update-profile', upload.single('avatar'), async (req, res) => 
 });
 
 // Middleware to verify admin role
-function verifyAdmin(req, res, next) {
+async function verifyAdmin(req, res, next) {
 	const token = req.headers.authorization?.split(' ')[1];
 	if (!token) return res.status(401).json({ message: 'No token provided.' });
-	// Token validation is basic - in production use JWT
+
+	const user = await findUserByToken(token);
+	if (!user) return res.status(401).json({ message: 'Invalid or expired token.' });
+	if (user.role !== 'admin') return res.status(403).json({ message: 'Admin role required.' });
+
+	req.user = user;
 	next();
 }
 

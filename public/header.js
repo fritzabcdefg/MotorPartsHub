@@ -19,40 +19,38 @@ function initHeaderNav() {
     return;
   }
 
-  if (user.role === 'admin') {
-    if (navCart && navCart.parentNode) {
-      navCart.parentNode.removeChild(navCart);
+  const isAdmin = user.role === 'admin';
+  if (!isAdmin) {
+    if (navDashboard && navDashboard.parentNode) {
+      navDashboard.parentNode.removeChild(navDashboard);
     }
-    if (navAuth) {
-      navAuth.textContent = 'Logout';
-      navAuth.href = '#';
-      navAuth.id = 'navLogout';
-    }
-    if (navDashboard) {
-      const adminLinks = document.createElement('span');
-      adminLinks.innerHTML = '\n      <a href="users.html">Users</a>\n      <a href="items.html">Items</a>\n      <a href="orders.html">Orders</a>\n      <a href="#" id="navLogout">Logout</a>';
-      navDashboard.parentNode.insertBefore(adminLinks, navDashboard.nextSibling);
-    }
-    document.addEventListener('click', function (e) {
-      if (e.target && (e.target.id === 'navLogout' || e.target.closest('#navLogout'))) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        window.location.href = 'login.html';
-      }
-    });
-    return;
   }
 
   if (navAuth) {
     navAuth.textContent = 'Logout';
     navAuth.href = '#';
-    navAuth.addEventListener('click', function (e) {
-      e.preventDefault();
+    navAuth.id = 'navLogout';
+  }
+
+  if (isAdmin) {
+    if (navCart && navCart.parentNode) {
+      navCart.parentNode.removeChild(navCart);
+    }
+    if (navDashboard && !document.querySelector('.admin-links')) {
+      const adminLinks = document.createElement('span');
+      adminLinks.className = 'admin-links';
+      adminLinks.innerHTML = '\n      <a href="users.html">Users</a>\n      <a href="items.html">Inventory</a>\n      <a href="orders.html">Orders</a>';
+      navDashboard.parentNode.insertBefore(adminLinks, navDashboard.nextSibling);
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && (e.target.id === 'navLogout' || e.target.closest('#navLogout'))) {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       window.location.href = 'login.html';
-    });
-  }
+    }
+  });
 }
 
 window.initHeaderNav = initHeaderNav;

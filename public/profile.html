@@ -12,7 +12,15 @@
     <h1>Your Profile</h1>
     <div id="profileRoot"></div>
   </main>
+  <script src="header.js"></script>
   <script src="../js/user.js"></script>
-  <script>fetch('header.html').then(r=>r.text()).then(t=>{document.getElementById('header').innerHTML=t});</script>
+  <script>
+    fetch('header.html')
+      .then(r => r.text())
+      .then(t => {
+        document.getElementById('header').innerHTML = t;
+        if (window.initHeaderNav) window.initHeaderNav();
+      });
+  </script>
 </body>
 </html>

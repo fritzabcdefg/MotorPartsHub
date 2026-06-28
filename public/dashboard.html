@@ -18,6 +18,14 @@
   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script src="../js/user.js"></script>
   <script src="../js/dashboard.js"></script>
-  <script>fetch('header.html').then(r=>r.text()).then(t=>{document.getElementById('header').innerHTML=t});</script>
+  <script src="header.js"></script>
+  <script>
+    fetch('header.html')
+      .then(r => r.text())
+      .then(t => {
+        document.getElementById('header').innerHTML = t;
+        if (window.initHeaderNav) window.initHeaderNav();
+      });
+  </script>
 </body>
 </html>

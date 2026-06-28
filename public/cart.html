@@ -12,10 +12,15 @@
     <h1>Your Cart</h1>
     <div id="cartItems"></div>
   </main>
+  <script src="header.js"></script>
   <script src="../js/cart.js"></script>
   <script>
-    // load header fragment
-    document.getElementById('header').innerHTML = fetch('header.html').then(r=>r.text()).then(t=>{document.getElementById('header').innerHTML=t});
+    fetch('header.html')
+      .then(r => r.text())
+      .then(t => {
+        document.getElementById('header').innerHTML = t;
+        if (window.initHeaderNav) window.initHeaderNav();
+      });
   </script>
 </body>
 </html>

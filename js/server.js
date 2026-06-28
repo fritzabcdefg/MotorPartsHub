@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const upload = multer();
+const fs = require('fs');
 const path = require('path');
 
 const sequelize = require('../models/database');
@@ -15,6 +15,21 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const uploadPath = path.join(__dirname, '..', 'public', 'uploads');
+if (!fs.existsSync(uploadPath)) {
+	fs.mkdirSync(uploadPath, { recursive: true });
+}
+app.use('/uploads', express.static(uploadPath));
+
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => cb(null, uploadPath),
+	filename: (req, file, cb) => {
+		const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_.]/g, '_');
+		cb(null, `${Date.now()}-${safeName}`);
+	}
+});
+const upload = multer({ storage });
 
 // Configure Sequelize-backed User model and ensure DB is ready before starting server
 const { DataTypes } = require('sequelize');
@@ -149,6 +164,69 @@ app.get('/api/v1/users', verifyAdmin, async (req, res) => {
 		res.json({ success: true, users: userList });
 	} catch (error) {
 		res.status(500).json({ message: 'Unable to fetch users.', error: error.message });
+	}
+});
+
+app.get('/api/v1/parts', verifyAdmin, async (req, res) => {
+	try {
+		const parts = await Part.findAll();
+		res.json({ success: true, parts });
+	} catch (error) {
+		res.status(500).json({ message: 'Unable to fetch parts.', error: error.message });
+	}
+});
+
+app.post('/api/v1/parts', verifyAdmin, upload.array('images', 5), async (req, res) => {
+	try {
+		const images = req.files?.map(file => `/uploads/${file.filename}`) || [];
+		const part = await Part.create({
+			name: req.body.name,
+			description: req.body.description,
+			price: parseFloat(req.body.price) || 0,
+			quantity: parseInt(req.body.quantity, 10) || 0,
+			images: JSON.stringify(images)
+		});
+		res.status(201).json({ success: true, part });
+	} catch (error) {
+		console.error('POST /api/v1/parts error:', error.stack || error.message);
+		res.status(400).json({ message: 'Unable to create part.', error: error.message });
+	}
+});
+
+app.put('/api/v1/parts/:id', verifyAdmin, upload.array('images', 5), async (req, res) => {
+	try {
+		const part = await Part.findByPk(req.params.id);
+		if (!part) return res.status(404).json({ message: 'Part not found.' });
+
+		const images = req.files?.map(file => `/uploads/${file.filename}`);
+		const updates = {
+			name: req.body.name,
+			description: req.body.description,
+			price: parseFloat(req.body.price) || part.price,
+			quantity: parseInt(req.body.quantity, 10) || part.quantity
+		};
+		if (images && images.length) {
+			updates.images = JSON.stringify(images);
+		}
+
+		await part.update(updates);
+		res.json({ success: true, message: 'Part updated.', part });
+	} catch (error) {
+		console.error('PUT /api/v1/parts/:id error:', error.stack || error.message);
+		res.status(400).json({ message: 'Unable to update part.', error: error.message });
+	}
+});
+
+app.delete('/api/v1/parts/:id', verifyAdmin, async (req, res) => {
+	try {
+		const part = await Part.findByPk(req.params.id);
+		if (!part) return res.status(404).json({ message: 'Part not found.' });
+
+		await part.destroy();
+		res.json({ success: true, message: 'Part deleted.' });
+	} catch (error) {
+		console.error('DELETE /api/v1/parts/:id error:', error.stack || error.message);
+		res.status(500).json({ message: 'Unable to delete part.', error: error.message });
 	}
 });
 

@@ -21,7 +21,7 @@ $(document).ready(function () {
         const html = parts.map(part => `
             <div class="search-item" data-id="${part.id}" data-name="${part.name}">
                 <span>${part.name}</span>
-                <strong>$${Number(part.price).toFixed(2)}</strong>
+                <strong>₱ ${Number(part.price).toFixed(2)}</strong>
             </div>
         `).join('');
 

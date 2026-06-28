@@ -32,13 +32,14 @@
                 <h2>Inventory Management</h2>
                 <p class="muted">Manage your current inventory items and spare parts here.</p>
                 <form id="partForm" class="part-form">
-                    <input type="hidden" id="partId" value="">
+                    <input type="hidden" id="partId" name="id" value="">
                     <div class="form-row">
-                        <label>Name<span class="required">*</span><input id="partName" type="text" required></label>
-                        <label>Description<input id="partDescription" type="text"></label>
-                        <label>Price<span class="required">*</span><input id="partPrice" type="number" step="0.01" required></label>
-                        <label>Quantity<input id="partQuantity" type="number" min="0"></label>
-                        <label>Images<input id="partImages" type="file" multiple accept="image/*"></label>
+                        <label>Name<span class="required">*</span><input id="partName" name="name" type="text" required></label>
+                        <label>Category<span class="required">*</span><input id="partCategory" name="category" type="text" required></label>
+                        <label>Description<input id="partDescription" name="description" type="text"></label>
+                        <label>Price<span class="required">*</span><input id="partPrice" name="price" type="number" step="0.01" required></label>
+                        <label>Stock<input id="partQuantity" name="quantity" type="number" min="0"></label>
+                        <label>Images<input id="partImages" name="images" type="file" multiple accept="image/*"></label>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn">Save Part</button>
@@ -51,8 +52,9 @@
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
+                            <th>Category</th>
                             <th>Price</th>
-                            <th>Quantity</th>
+                            <th>Stock</th>
                             <th>Images</th>
                             <th>Actions</th>
                         </tr>
@@ -62,7 +64,8 @@
                             <tr>
                                 <td>${part.id}</td>
                                 <td>${part.name}</td>
-                                <td>$${Number(part.price).toFixed(2)}</td>
+                                <td>${part.category || 'Unspecified'}</td>
+                                <td>₱ ${Number(part.price).toFixed(2)}</td>
                                 <td>${part.quantity || 0}</td>
                                 <td>${parseImages(part.images).length}</td>
                                 <td>
@@ -164,6 +167,7 @@
     function fillPartForm(part) {
         $('#partId').val(part.id);
         $('#partName').val(part.name);
+        $('#partCategory').val(part.category || '');
         $('#partDescription').val(part.description || '');
         $('#partPrice').val(part.price);
         $('#partQuantity').val(part.quantity || 0);
@@ -174,6 +178,7 @@
     function resetPartForm() {
         $('#partId').val('');
         $('#partName').val('');
+        $('#partCategory').val('');
         $('#partDescription').val('');
         $('#partPrice').val('');
         $('#partQuantity').val('');

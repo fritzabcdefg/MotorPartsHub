@@ -16,7 +16,7 @@ const User = sequelize.define('User', {
 async function seed() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     console.log('DB connected — seeding data...');
 
     // Seed users (idempotent with findOrCreate)
@@ -32,9 +32,11 @@ async function seed() {
 
     // Seed parts
     const parts = [
-      { name: 'Brake Pad', price: 12.5 },
-      { name: 'Oil Filter', price: 7.99 },
-      { name: 'Air Filter', price: 15.0 }
+      { name: 'Brake Pad', category: 'Braking', description: 'High-friction brake pad for cars and trucks.', price: 1250.00, quantity: 120 },
+      { name: 'Oil Filter', category: 'Engine', description: 'Replacement oil filter for most standard engines.', price: 799.00, quantity: 220 },
+      { name: 'Air Filter', category: 'Engine', description: 'Premium air filter for better airflow and protection.', price: 1500.00, quantity: 180 },
+      { name: 'Spark Plug', category: 'Ignition', description: 'Long-life spark plug for efficient combustion.', price: 550.00, quantity: 300 },
+      { name: 'Drive Belt', category: 'Accessories', description: 'Durable drive belt for alternator and power-steering systems.', price: 2200.00, quantity: 95 }
     ];
 
     for (const p of parts) {

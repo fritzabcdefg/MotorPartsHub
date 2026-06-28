@@ -61,7 +61,7 @@
                             <tr>
                                 <td>${item.item_id || item.id}</td>
                                 <td>${item.description || item.name}</td>
-                                <td>$${Number(item.sell_price || item.price || 0).toFixed(2)}</td>
+                                <td>₱ ${Number(item.sell_price || item.price || 0).toFixed(2)}</td>
                                 <td>${item.quantity || 0}</td>
                                 <td>${item.img_path ? `<img src="${item.img_path}" style="max-width:60px;max-height:40px;"/>` : ''}</td>
                                 <td>
